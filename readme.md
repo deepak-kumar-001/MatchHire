@@ -11,7 +11,7 @@ resume_relevance_system/
 ├── models.py              # Pydantic models for API
 ├── text_processor.py      # AI/NLP processing engine
 ├── run.py                 # Server startup script
-├── setup.py              # Installation script
+├── startup.py              # Installation script
 ├── requirements.txt       # Python dependencies
 ├── index.html            # Frontend web application
 └── resume_analysis.db    # SQLite database (created automatically)
@@ -215,5 +215,6 @@ For issues or questions:
 2. Verify all dependencies are installed correctly
 3. Ensure the backend server is running on port 8000
 4. Check browser console for any JavaScript errors
+
 
 Happy analyzing! 🚀
