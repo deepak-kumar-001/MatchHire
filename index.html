@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Relevance Check System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6741);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .upload-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .file-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e8f5e8;
+            color: #2d5a2d;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 400px;
+        }
+        
+        .results-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .score-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #667eea;
+        }
+        
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .score-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .score-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .score-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 1s ease;
+        }
+        
+        .verdict {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .verdict.high {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .verdict.medium {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+        
+        .verdict.low {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .feedback-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .feedback-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .missing-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .skill-tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .dashboard-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .search-bar {
+            padding: 12px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 300px;
+        }
+        
+        .history-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .table-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            font-weight: 600;
+        }
+        
+        .table-row {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            border-bottom: 1px solid #dee2e6;
+            align-items: center;
+        }
+        
+        .table-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .table-header,
+            .table-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Resume Relevance Check System</h1>
+            <p>AI-Powered Resume Analysis & Job Matching Platform</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <h3>📄 Upload Resume</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="resumeFile" class="file-input" accept=".pdf,.docx">
+                    <label for="resumeFile" class="file-input-label">
+                        Choose Resume (PDF/DOCX)
+                    </label>
+                    <div class="file-status" id="resumeStatus"></div>
+                </div>
+                
+                <h3>💼 Upload Job Description</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="jobFile" class="file-input" accept=".pdf,.docx,.txt">
+                    <label for="jobFile" class="file-input-label">
+                        Choose Job Description
+                    </label>
+                    <div class="file-status" id="jobStatus"></div>
+                </div>
+                
+                <button class="btn" id="analyzeBtn" onclick="analyzeResume()" disabled>
+                    🔍 Analyze Resume
+                </button>
+            </div>
+            
+            <div class="results-section">
+                <h3>📊 Analysis Results</h3>
+                <div id="loadingDiv" class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing resume with AI...</p>
+                </div>
+                
+                <div id="errorDiv" class="error-message"></div>
+                
+                <div id="resultsDiv" style="display: none;">
+                    <div class="score-card">
+                        <div class="score-row">
+                            <span class="score-label">Hard Match Score</span>
+                            <span class="score-value" id="hardScore">0%</span>
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-fill" id="hardBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-card">
+                        <div class="score-row">
+                            <span class="score-label">Soft Match Score</span>
+                            <span class="score-value" id="softScore">0%</span>
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-fill" id="softBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-card">
+                        <div class="score-row">
+                            <span class="score-label">Overall Relevance</span>
+                            <span class="score-value" id="overallScore">0%</span>
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-fill" id="overallBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="verdict" id="verdictDiv">
+                        Analyzing...
+                    </div>
+                    
+                    <div class="feedback-section">
+                        <h4>Missing Skills</h4>
+                        <div class="missing-skills" id="missingSkills"></div>
+                        
+                        <h4>Personalized Feedback</h4>
+                        <p id="feedbackText">Analysis in progress...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="dashboard-header">
+                <h3>📈 Analysis History</h3>
+                <input type="text" class="search-bar" placeholder="Search resumes..." id="searchBar" onkeyup="filterHistory()">
+            </div>
+            
+            <div class="history-table">
+                <div class="table-header">
+                    <div>Resume Name</div>
+                    <div>Date</div>
+                    <div>Overall Score</div>
+                    <div>Verdict</div>
+                    <div>Action</div>
+                </div>
+                <div id="historyBody">
+                    <!-- History will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Backend API configuration
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let analysisHistory = [];
+        let uploadedResumeId = null;
+        let uploadedJobId = null;
+
+        // File upload handlers
+        document.getElementById('resumeFile').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const response = await uploadResume(file);
+                    uploadedResumeId = response.resume_id;
+                    document.getElementById('resumeStatus').innerHTML = `✓ ${file.name} uploaded successfully<br><small>Preview: ${response.extracted_text_preview}</small>`;
+                    document.getElementById('resumeStatus').style.display = 'block';
+                    document.getElementById('resumeStatus').style.background = '#e8f5e8';
+                    document.getElementById('resumeStatus').style.color = '#2d5a2d';
+                    checkFilesSelected();
+                } catch (error) {
+                    showError('Failed to upload resume: ' + error.message);
+                    document.getElementById('resumeStatus').innerHTML = `✗ Failed to upload ${file.name}`;
+                    document.getElementById('resumeStatus').style.display = 'block';
+                    document.getElementById('resumeStatus').style.background = '#f8d7da';
+                    document.getElementById('resumeStatus').style.color = '#721c24';
+                }
+            }
+        });
+
+        document.getElementById('jobFile').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const response = await uploadJobDescription(file);
+                    uploadedJobId = response.job_description_id;
+                    document.getElementById('jobStatus').innerHTML = `✓ ${file.name} uploaded successfully<br><small>Preview: ${response.extracted_text_preview}</small>`;
+                    document.getElementById('jobStatus').style.display = 'block';
+                    document.getElementById('jobStatus').style.background = '#e8f5e8';
+                    document.getElementById('jobStatus').style.color = '#2d5a2d';
+                    checkFilesSelected();
+                } catch (error) {
+                    showError('Failed to upload job description: ' + error.message);
+                    document.getElementById('jobStatus').innerHTML = `✗ Failed to upload ${file.name}`;
+                    document.getElementById('jobStatus').style.display = 'block';
+                    document.getElementById('jobStatus').style.background = '#f8d7da';
+                    document.getElementById('jobStatus').style.color = '#721c24';
+                }
+            }
+        });
+
+        function checkFilesSelected() {
+            document.getElementById('analyzeBtn').disabled = !(uploadedResumeId && uploadedJobId);
+        }
+
+        // API functions
+        async function uploadResume(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch(`${API_BASE_URL}/upload/resume/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Upload failed');
+            }
+            
+            return await response.json();
+        }
+
+        async function uploadJobDescription(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch(`${API_BASE_URL}/upload/job-description/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Upload failed');
+            }
+            
+            return await response.json();
+        }
+
+        async function analyzeResumeAPI() {
+            const formData = new FormData();
+            formData.append('resume_id', uploadedResumeId);
+            formData.append('job_description_id', uploadedJobId);
+            
+            const response = await fetch(`${API_BASE_URL}/analyze/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Analysis failed');
+            }
+            
+            return await response.json();
+        }
+
+        async function loadAnalysisHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/analyses/`);
+                if (response.ok) {
+                    analysisHistory = await response.json();
+                    updateHistoryDisplay();
+                } else {
+                    console.log('No analysis history available or server not running');
+                }
+            } catch (error) {
+                console.error('Failed to load analysis history:', error);
+                // Don't show error to user as this might be normal on first run
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorDiv');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 8000);
+        }
+
+        async function analyzeResume() {
+            const loadingDiv = document.getElementById('loadingDiv');
+            const resultsDiv = document.getElementById('resultsDiv');
+            const errorDiv = document.getElementById('errorDiv');
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                // Call real API
+                const results = await analyzeResumeAPI();
+
+                // Update UI with results
+                updateResults(results, results.verdict, results.verdict.toLowerCase());
+                
+                // Refresh history from backend
+                await loadAnalysisHistory();
+
+                // Hide loading, show results
+                loadingDiv.style.display = 'none';
+                resultsDiv.style.display = 'block';
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                showError('Error analyzing resume: ' + error.message);
+            }
+        }
+
+        function updateResults(results, verdict, verdictClass) {
+            // Update scores
+            document.getElementById('hardScore').textContent = results.hard_score + '%';
+            document.getElementById('softScore').textContent = results.soft_score + '%';
+            document.getElementById('overallScore').textContent = results.overall_score + '%';
+            
+            // Update progress bars
+            setTimeout(() => {
+                document.getElementById('hardBar').style.width = results.hard_score + '%';
+                document.getElementById('softBar').style.width = results.soft_score + '%';
+                document.getElementById('overallBar').style.width = results.overall_score + '%';
+            }, 500);
+            
+            // Update verdict
+            const verdictDiv = document.getElementById('verdictDiv');
+            verdictDiv.textContent = verdict + ' Suitability';
+            verdictDiv.className = 'verdict ' + verdictClass;
+            
+            // Update missing skills
+            const skillsContainer = document.getElementById('missingSkills');
+            skillsContainer.innerHTML = '';
+            results.missing_skills.forEach(skill => {
+                const skillTag = document.createElement('span');
+                skillTag.className = 'skill-tag';
+                skillTag.textContent = skill;
+                skillsContainer.appendChild(skillTag);
+            });
+            
+            // Update feedback
+            document.getElementById('feedbackText').textContent = results.feedback;
+        }
+
+        function updateHistoryDisplay() {
+            const historyBody = document.getElementById('historyBody');
+            historyBody.innerHTML = '';
+            
+            if (analysisHistory.length === 0) {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.style.textAlign = 'center';
+                row.style.gridColumn = '1 / -1';
+                row.style.color = '#6c757d';
+                row.style.fontStyle = 'italic';
+                row.innerHTML = '<div style="grid-column: 1 / -1;">No analyses yet. Upload files and analyze to see history here.</div>';
+                historyBody.appendChild(row);
+                return;
+            }
+            
+            analysisHistory.forEach(entry => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                
+                let verdictColor = '#dc3545'; // red
+                if (entry.verdict === 'High') verdictColor = '#28a745'; // green
+                else if (entry.verdict === 'Medium') verdictColor = '#ffc107'; // yellow
+                
+                const analysisDate = new Date(entry.analysis_date).toLocaleDateString();
+                
+                row.innerHTML = `
+                    <div>${entry.resume_filename}</div>
+                    <div>${analysisDate}</div>
+                    <div>${Math.round(entry.overall_score)}%</div>
+                    <div style="color: ${verdictColor}; font-weight: 600;">${entry.verdict}</div>
+                    <div><button class="btn" style="padding: 8px 16px; font-size: 0.9rem;" onclick="viewDetails(${entry.id})">View Details</button></div>
+                `;
+                
+                historyBody.appendChild(row);
+            });
+        }
+
+        async function viewDetails(analysisId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/analyses/${analysisId}`);
+                if (response.ok) {
+                    const entry = await response.json();
+                    updateResults({
+                        hard_score: entry.hard_score,
+                        soft_score: entry.soft_score,
+                        overall_score: entry.overall_score,
+                        missing_skills: entry.missing_skills,
+                        feedback: entry.feedback
+                    }, entry.verdict, entry.verdict.toLowerCase());
+                    
+                    document.getElementById('resultsDiv').style.display = 'block';
+                    document.getElementById('resultsDiv').scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                showError('Failed to load analysis details');
+            }
+        }
+
+        function filterHistory() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const rows = document.querySelectorAll('#historyBody .table-row');
+            
+            rows.forEach(row => {
+                const resumeName = row.querySelector('div').textContent.toLowerCase();
+                if (resumeName.includes('no analyses yet')) {
+                    return; // Don't filter the "no analyses" message
+                }
+                row.style.display = resumeName.includes(searchTerm) ? 'grid' : 'none';
+            });
+        }
+
+        // Initialize application
+        window.addEventListener('load', async () => {
+            await loadAnalysisHistory();
+            
+            // Check if backend is running
+            try {
+                const response = await fetch(`${API_BASE_URL}/`);
+                if (response.ok) {
+                    console.log('✅ Backend server connected successfully');
+                }
+            } catch (error) {
+                showError('⚠️ Backend server not running. Please start the FastAPI server first.');
+                console.error('Backend connection failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>
